@@ -554,12 +554,25 @@ mongo_cursor* gridfile_get_chunks(gridfile* gfile, int start, int size)
   bson orderby_bson;
   bson_buffer command_buf;
   bson command_bson;
+  bson_type type;
+  char *id_str;
+  int id_int;
     
-  bson_find(&it, gfile->meta, "_id");
-  id = *bson_iterator_oid(&it); 
-  
-  bson_buffer_init(&query_buf);
-  bson_append_oid(&query_buf, "files_id", &id);
+  type = bson_find(&it, gfile->meta, "_id");
+  if( type == bson_oid ) {
+  	id = *bson_iterator_oid(&it);
+    bson_buffer_init(&query_buf);
+    bson_append_oid(&query_buf, "files_id", &id);
+  } else if (type == bson_string) {
+  	id_str = bson_iterator_string(&it);
+    bson_buffer_init(&query_buf);
+    bson_append_string(&query_buf, "files_id", id_str);	
+  } else if (type == bson_string) {
+  	id_int = bson_iterator_int(&it);
+    bson_buffer_init(&query_buf);
+    bson_append_int(&query_buf, "files_id", id_int);	
+  } else return NULL;
+
   if (size == 1) {
     bson_append_int(&query_buf, "n", start);
   } else {
